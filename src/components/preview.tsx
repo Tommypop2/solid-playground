@@ -240,7 +240,7 @@ export const Preview: Component<Props> = (props) => {
           }
         });
       } else {
-        console.log({ devtoolsSrc });
+        // console.log({ devtoolsSrc });
         devtoolsIframe.contentWindow!.postMessage(event.data, devtoolsSrc);
       }
     }

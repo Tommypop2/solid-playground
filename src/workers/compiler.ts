@@ -5,10 +5,15 @@ import { transform } from '@babel/standalone';
 import babelPresetSolid from 'babel-preset-solid';
 // @ts-ignore
 import { rollup, Plugin } from '@rollup/browser';
+// @ts-ignore
+import './wasm_exec.js';
 import dd from 'dedent';
-
+import url from './compiler.wasm?url';
 export const CDN_URL = (importee: string) => `https://jspm.dev/${importee}`;
-
+// @ts-ignore
+const go = new Go();
+const result = await WebAssembly.instantiateStreaming(fetch(url), go.importObject);
+go.run(result.instance);
 const tabsLookup = new Map<string, Tab>();
 
 function uid(str: string) {
@@ -16,95 +21,33 @@ function uid(str: string) {
     .reduce((s, c) => (Math.imul(31, s) + c.charCodeAt(0)) | 0, 0)
     .toString();
 }
+function transformCode(code: string, filename: string) {
+  let { code: transformedCode } = transform(code, {
+    presets: [
+      [babelPresetSolid, { generate: 'dom', hydratable: false }],
+      ['typescript', { onlyRemoveTypeImports: true }],
+    ],
+    filename: filename + '.tsx',
+  });
+  return transformedCode;
+}
 let importMap: ImportMap = {};
-/**
- * This is a custom rollup plugin to handle tabs as a
- * virtual file system and replacing every non-URL import with an
- * ESM CDN import.
- */
-const replPlugin: Plugin = {
-  name: 'repl-plugin',
-
-  async resolveId(importee: string) {
-    // This is a tab being imported
-    if (importee.startsWith('.') && importee.endsWith('.css')) return importee;
-    if (importee.startsWith('.')) return importee;
-
-    // External URL
-    if (importee.includes('://')) {
-      return {
-        id: importee,
-        external: true,
-      };
-    }
-    const cdn_url = CDN_URL(importee);
-    importMap[importee] = cdn_url;
-    // NPM module via ESM CDN
-    return {
-      id: importee,
-      external: true,
-    };
-  },
-
-  async load(id: string) {
-    return tabsLookup.get(id)?.source;
-  },
-
-  async transform(code: string, filename: string) {
-    if (/\.css$/.test(filename)) {
-      const id = uid(filename);
-
-      return {
-        code: dd`
-          (() => {
-            let stylesheet = document.getElementById('${id}');
-            if (!stylesheet) {
-              stylesheet = document.createElement('style')
-              stylesheet.setAttribute('id', ${id})
-              document.head.appendChild(stylesheet)
-            }
-            const styles = document.createTextNode(\`${code}\`)
-            stylesheet.innerHTML = ''
-            stylesheet.appendChild(styles)
-          })()
-        `,
-      };
-    }
-
-    // Compile solid code
-    else if (filename.startsWith('.')) {
-      let { code: transformedCode } = transform(code, {
-        presets: [
-          [babelPresetSolid, { generate: 'dom', hydratable: false }],
-          ['typescript', { onlyRemoveTypeImports: true }],
-        ],
-        filename: filename + '.tsx',
-      });
-      if (transformedCode) return { code: transformedCode };
-    }
-  },
-};
 
 async function compile(tabs: Tab[], event: string) {
+  let tabsArr = [];
   for (const tab of tabs) {
-    tabsLookup.set(`./${tab.name.replace(/.(tsx|jsx)$/, '')}`, tab);
+    // tabsLookup.set(`./${tab.name.replace(/.(tsx|jsx)$/, '')}`, tab);
+    if (tab.name.endsWith('.json')) {
+      continue;
+    }
+    const tabName = `./${tab.name.replace(/.(tsx|jsx)$/, '')}`;
+    tabsArr.push([tabName, transformCode(tab.source, tabName)]);
   }
   importMap = {};
-  const compiler = await rollup({
-    input: `./${tabs[0].name.replace(/.(tsx|jsx)$/, '')}`,
-    plugins: [replPlugin],
-  });
-
-  const {
-    output: [{ code, imports }],
-  } = await compiler.generate({ format: 'esm', inlineDynamicImports: true });
-
+  const code = (self as any).build(JSON.stringify({ Files: tabsArr }));
+  importMap = (self as any).getImportMap();
   if (event === 'ROLLUP') {
-    return { event, compiled: code.replace('render(', 'window.dispose = render('), import_map: importMap };
-  }
-
-  if (event === 'IMPORTS') {
-    return { event, imports };
+    return { event, compiled: code, import_map: importMap };
   }
 }
 
@@ -129,6 +72,7 @@ self.addEventListener('message', async ({ data }) => {
       self.postMessage(await compile(tabs, event));
     }
   } catch (e) {
+    console.error(e);
     self.postMessage({ event: 'ERROR', error: (e as Error).message });
   }
 });
