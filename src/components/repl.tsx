@@ -111,7 +111,7 @@ const Repl: ReplProps = (props) => {
     if (event === 'ERROR') return setError(error);
     else setError('');
 
-    if (event === 'ROLLUP') {
+    if (event === 'ESBUILD') {
       const keys = Object.keys(import_map);
       let currentMap = window.structuredClone(importMap());
       for (let i = 0; i < keys.length; i++) {
@@ -151,7 +151,7 @@ const Repl: ReplProps = (props) => {
     applyCompilation(
       outputTab() == 0
         ? {
-            event: 'ROLLUP',
+            event: 'ESBUILD',
             tabs: unwrap(props.tabs),
           }
         : {

@@ -4,17 +4,13 @@ import { transform } from '@babel/standalone';
 // @ts-ignore
 import babelPresetSolid from 'babel-preset-solid';
 // @ts-ignore
-import { rollup, Plugin } from '@rollup/browser';
-// @ts-ignore
 import './wasm_exec.js';
-import dd from 'dedent';
 import url from './compiler.wasm?url';
 export const CDN_URL = (importee: string) => `https://jspm.dev/${importee}`;
 // @ts-ignore
 const go = new Go();
 const result = await WebAssembly.instantiateStreaming(fetch(url), go.importObject);
 go.run(result.instance);
-const tabsLookup = new Map<string, Tab>();
 
 function uid(str: string) {
   return Array.from(str)
@@ -46,7 +42,7 @@ async function compile(tabs: Tab[], event: string) {
   importMap = {};
   const code = (self as any).build(JSON.stringify({ Files: tabsArr }));
   importMap = (self as any).getImportMap();
-  if (event === 'ROLLUP') {
+  if (event === 'ESBUILD') {
     return { event, compiled: code, import_map: importMap };
   }
 }
@@ -68,7 +64,7 @@ self.addEventListener('message', async ({ data }) => {
   try {
     if (event === 'BABEL') {
       self.postMessage(await babel(tab, compileOpts));
-    } else if (event === 'ROLLUP' || event === 'IMPORTS') {
+    } else if (event === 'ESBUILD' || event === 'IMPORTS') {
       self.postMessage(await compile(tabs, event));
     }
   } catch (e) {
