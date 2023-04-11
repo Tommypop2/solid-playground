@@ -9,8 +9,8 @@ import url from './compiler.wasm?url';
 export const CDN_URL = (importee: string) => `https://jspm.dev/${importee}`;
 // @ts-ignore
 const go = new Go();
-const result = await WebAssembly.instantiateStreaming(fetch(url), go.importObject);
-go.run(result.instance);
+const result = WebAssembly.instantiateStreaming(fetch(url), go.importObject);
+result.then((res) => go.run(res.instance));
 
 function uid(str: string) {
   return Array.from(str)
