@@ -5,7 +5,7 @@ import { transform } from '@babel/standalone';
 import babelPresetSolid from 'babel-preset-solid';
 // @ts-ignore
 import './wasm_exec.js';
-import url from './compiler.wasm?url';
+import url from './compiler.wasm.gz?url';
 export const CDN_URL = (importee: string) => `https://jspm.dev/${importee}`;
 // @ts-ignore
 const go = new Go();
