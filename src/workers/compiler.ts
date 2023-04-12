@@ -5,19 +5,16 @@ import { transform } from '@babel/standalone';
 import babelPresetSolid from 'babel-preset-solid';
 // @ts-ignore
 import './wasm_exec.js';
-import url from './compiler.wasm.gz?url';
+import url from './compiler.wasm?url';
 export const CDN_URL = (importee: string) => `https://jspm.dev/${importee}`;
 // @ts-ignore
 const go = new Go();
 const result = WebAssembly.instantiateStreaming(fetch(url), go.importObject);
 result.then((res) => go.run(res.instance));
-
-function uid(str: string) {
-  return Array.from(str)
-    .reduce((s, c) => (Math.imul(31, s) + c.charCodeAt(0)) | 0, 0)
-    .toString();
-}
 function transformCode(code: string, filename: string) {
+  if (filename.endsWith('.css')) {
+    return code;
+  }
   let { code: transformedCode } = transform(code, {
     presets: [
       [babelPresetSolid, { generate: 'dom', hydratable: false }],
