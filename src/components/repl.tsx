@@ -108,8 +108,10 @@ const Repl: ReplProps = (props) => {
 
   compiler.addEventListener('message', ({ data }) => {
     const { event, compiled, import_map, error } = data;
+    console.log(event);
     if (event === 'ERROR') return setError(error);
     else setError('');
+    if (event === 'NOT_READY') return;
 
     if (event === 'ESBUILD') {
       const keys = Object.keys(import_map);
