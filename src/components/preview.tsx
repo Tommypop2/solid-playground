@@ -267,7 +267,7 @@ export const Preview: Component<Props> = (props) => {
 
   return (
     <div
-      class="grid h-full w-full"
+      class="grid h-full min-h-0 w-full min-w-0"
       ref={outerContainer}
       classList={props.classList}
       style={{
