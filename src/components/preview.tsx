@@ -288,7 +288,6 @@ export const Preview: Component<Props> = (props) => {
         }}
         // @ts-ignore
         sandbox="allow-popups-to-escape-sandbox allow-scripts allow-popups allow-forms allow-pointer-lock allow-top-navigation allow-modals allow-same-origin"
-      />
       <Show when={props.devtools}>
         <GridResizer
           ref={resizer}
