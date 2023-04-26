@@ -8,12 +8,15 @@ import { GridResizer } from './gridResizer';
 import { Error } from './error';
 import { throttle } from '@solid-primitives/scheduled';
 import { createMediaQuery } from '@solid-primitives/media';
-import { editor, Uri } from 'monaco-editor';
+import { editor, languages, Uri } from 'monaco-editor';
 
 import MonacoTabs from './editor/monacoTabs';
 import Editor from './editor';
 import type { Repl as ReplProps } from 'solid-repl/lib/repl';
-
+import { resolveTypes } from './TypesResolver';
+function addModule(source: string, path: string) {
+  languages.typescript.typescriptDefaults.addExtraLib(source, path);
+}
 const compileMode = {
   SSR: { generate: 'ssr', hydratable: true },
   DOM: { generate: 'dom', hydratable: false },
@@ -25,7 +28,12 @@ const Repl: ReplProps = (props) => {
   let now: number;
 
   const tabRefs = new Map<string, HTMLSpanElement>();
-
+  // onMount(async () => {
+  //   console.log(await resolveTypes('font-details'));
+  //   // setTimeout(() => {
+  //   //   addModule('export declare function foo():string;', 'file:///node_modules/@types/external/index.d.ts');
+  //   // }, 6000);
+  // });
   const [error, setError] = createSignal('');
   const [output, setOutput] = createSignal('');
   const [mode, setMode] = createSignal<(typeof compileMode)[keyof typeof compileMode]>(compileMode.DOM);
@@ -94,7 +102,22 @@ const Repl: ReplProps = (props) => {
   const [importMap, setImportMap] = createSignal<Record<string, string>>(import_map, {
     equals: (a, b) => JSON.stringify(a) === JSON.stringify(b),
   });
-
+  let resolvedTypes: string[] = [];
+  const installedExtraLibs = Object.keys(languages.typescript.typescriptDefaults.getExtraLibs());
+  for (const installedLib of installedExtraLibs) {
+    const split = installedLib.split('/');
+    resolvedTypes.push(split.slice(4, split.length - 2).join('/'));
+  }
+  createEffect(async () => {
+    if (!importMap()) return;
+    const dependencies = Object.keys(importMap());
+    const dependenciesToFetch = dependencies.filter((dependency) => resolvedTypes.indexOf(dependency) == -1);
+    const results = await Promise.all(dependenciesToFetch.map((dependency) => resolveTypes(dependency)));
+    results.forEach((result) => {
+      if (result == undefined) return;
+      addModule(result.contents, `file:///node_modules/@types/${result.name}/index.d.ts`);
+    });
+  });
   let outputModel: editor.ITextModel;
   createEffect(() => {
     const outputUri = Uri.parse(`file:///${props.id}/output_dont_import.tsx`);
