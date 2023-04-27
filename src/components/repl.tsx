@@ -14,8 +14,12 @@ import MonacoTabs from './editor/monacoTabs';
 import Editor from './editor';
 import type { Repl as ReplProps } from 'solid-repl/lib/repl';
 import { resolveTypes } from './TypesResolver';
-function addModule(source: string, path: string) {
-  languages.typescript.typescriptDefaults.addExtraLib(source, path);
+import type { ExternalModule } from './TypesResolver';
+function addModule(lib: ExternalModule) {
+  languages.typescript.typescriptDefaults.addExtraLib(
+    lib.contents,
+    `file:///node_modules/@types/${lib.name}/index.d.ts`,
+  );
 }
 const compileMode = {
   SSR: { generate: 'ssr', hydratable: true },
@@ -28,12 +32,7 @@ const Repl: ReplProps = (props) => {
   let now: number;
 
   const tabRefs = new Map<string, HTMLSpanElement>();
-  // onMount(async () => {
-  //   console.log(await resolveTypes('font-details'));
-  //   // setTimeout(() => {
-  //   //   addModule('export declare function foo():string;', 'file:///node_modules/@types/external/index.d.ts');
-  //   // }, 6000);
-  // });
+
   const [error, setError] = createSignal('');
   const [output, setOutput] = createSignal('');
   const [mode, setMode] = createSignal<(typeof compileMode)[keyof typeof compileMode]>(compileMode.DOM);
@@ -112,10 +111,20 @@ const Repl: ReplProps = (props) => {
     if (!importMap()) return;
     const dependencies = Object.keys(importMap());
     const dependenciesToFetch = dependencies.filter((dependency) => resolvedTypes.indexOf(dependency) == -1);
+    // console.log(dependenciesToFetch[1])
+    // resolveTypes(dependenciesToFetch[1])
     const results = await Promise.all(dependenciesToFetch.map((dependency) => resolveTypes(dependency)));
-    results.forEach((result) => {
-      if (result == undefined) return;
-      addModule(result.contents, `file:///node_modules/@types/${result.name}/index.d.ts`);
+    // if (!results) return;
+    // for (let i = 0; i < results.length; i++) {
+    //   const result = results[i]!;
+
+    // }
+    results.forEach((extraLibs) => {
+      if (extraLibs == undefined) return;
+      extraLibs.forEach((result) => {
+        console.log(result);
+        addModule(result);
+      });
     });
   });
   let outputModel: editor.ITextModel;
