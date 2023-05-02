@@ -27,7 +27,7 @@ function babelTransform(filename: string, code: string) {
             },
             ImportDeclaration(path: any) {
               const importee: string = path.node.source.value;
-              // Replace relative imports, as import maps don't seem to be able to handle them properly
+
               cache[importee] = path.node.source.value = transformImportee(importee);
             },
           },
@@ -106,7 +106,8 @@ function transformImportee(fileName: string) {
   return url;
 }
 
-export function bundle(entryPoint: string, fileRecord: Record<string, string>) {
+type Options = {};
+export function bundle(entryPoint: string, fileRecord: Record<string, string>, options: Options) {
   files = fileRecord;
   for (let out in dataToReturn) {
     const url = dataToReturn[out];
