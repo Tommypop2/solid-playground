@@ -18,7 +18,8 @@ import type { ExternalModule } from './TypesResolver';
 function addModule(lib: ExternalModule) {
   languages.typescript.typescriptDefaults.addExtraLib(
     lib.contents,
-    `file:///node_modules/@types/${lib.name}/index.d.ts`,
+    `file:///node_modules/${lib.name}`,
+    // `file:///node_modules/@types/${lib.name}/index.d.ts`,
   );
 }
 const compileMode = {
@@ -126,6 +127,7 @@ const Repl: ReplProps = (props) => {
         addModule(result);
       });
     });
+    // console.log(resolveTypes('solid-js'));
   });
   let outputModel: editor.ITextModel;
   createEffect(() => {
