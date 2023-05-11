@@ -16,6 +16,7 @@ import type { Repl as ReplProps } from 'solid-repl/lib/repl';
 import { resolveTypes } from './TypesResolver';
 import type { ExternalModule } from './TypesResolver';
 function addModule(lib: ExternalModule) {
+  console.log(lib);
   languages.typescript.typescriptDefaults.addExtraLib(
     lib.contents,
     `file:///node_modules/${lib.name}`,
@@ -112,22 +113,13 @@ const Repl: ReplProps = (props) => {
     if (!importMap()) return;
     const dependencies = Object.keys(importMap());
     const dependenciesToFetch = dependencies.filter((dependency) => resolvedTypes.indexOf(dependency) == -1);
-    // console.log(dependenciesToFetch[1])
-    // resolveTypes(dependenciesToFetch[1])
     const results = await Promise.all(dependenciesToFetch.map((dependency) => resolveTypes(dependency)));
-    // if (!results) return;
-    // for (let i = 0; i < results.length; i++) {
-    //   const result = results[i]!;
-
-    // }
     results.forEach((extraLibs) => {
       if (extraLibs == undefined) return;
       extraLibs.forEach((result) => {
-        console.log(result);
         addModule(result);
       });
     });
-    // console.log(resolveTypes('solid-js'));
   });
   let outputModel: editor.ITextModel;
   createEffect(() => {
