@@ -45,7 +45,7 @@ const resolveInternalTypes: (
     const match = matches[i];
     const newUrl = resolveUrl(typesUrl, match);
     const urlPath = newUrl.split('/');
-    const filePath = urlPath.slice(urlPath.indexOf('dist') + 1).join('/');
+    const filePath = urlPath.slice(urlPath.indexOf(moduleName) + 1).join('/');
     console.log(filePath);
     const res = await resolveInternalTypes(
       moduleName,
