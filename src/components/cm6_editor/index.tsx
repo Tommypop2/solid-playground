@@ -30,6 +30,8 @@ import {
   closeBracketsKeymap,
   completionKeymap,
   CompletionResult,
+  CompletionContext,
+  completeFromList,
 } from '@codemirror/autocomplete';
 import { Diagnostic, lintKeymap, setDiagnostics } from '@codemirror/lint';
 import { EditorView } from '@codemirror/view';
@@ -200,14 +202,44 @@ const CM6Editor: Component<{
             },
           ]),
           javascript({ jsx: true, typescript: true }),
+          autocompletion({
+            activateOnTyping: true,
+            maxRenderedOptions: 30,
+            override: [
+              async (ctx): Promise<CompletionResult | null> => {
+                const { pos } = ctx;
+                try {
+                  const completions = env.languageService.getCompletionsAtPosition('main.tsx', pos, {});
+                  if (!completions) {
+                    console.log('Unable to get completions', { pos });
+                    return null;
+                  }
+
+                  return completeFromList(
+                    completions.entries.map((c, _) => ({
+                      type: c.kind,
+                      label: c.name,
+                      boost: 1 / Number(c.sortText),
+                    })),
+                  )(ctx);
+                } catch (e) {
+                  console.log('Unable to get completions', { pos, error: e });
+                  return null;
+                }
+              },
+            ],
+          }),
           hoverTooltip((view, pos, side) => {
             const tooltip: Tooltip = {
               pos,
               create(_) {
-                const toolTip = env.languageService.getQuickInfoAtPosition('main.tsx', pos);
+                const quickInfo = env.languageService.getQuickInfoAtPosition('main.tsx', pos);
                 const dom = document.createElement('div');
                 dom.setAttribute('class', 'cm-quickinfo-tooltip');
-                dom.textContent = displayPartsToString(toolTip?.displayParts);
+                dom.textContent = quickInfo
+                  ? displayPartsToString(quickInfo.displayParts) +
+                    (quickInfo.documentation?.length ? '\n' + displayPartsToString(quickInfo.documentation) : '')
+                  : '';
                 // dom.textContent = '123';
                 return { dom };
               },
