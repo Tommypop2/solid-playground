@@ -42,6 +42,12 @@ dependencies:
   '@codemirror/view':
     specifier: ^6.12.0
     version: 6.12.0
+  '@lezer/highlight':
+    specifier: ^1.1.6
+    version: 1.1.6
+  '@replit/codemirror-vim':
+    specifier: ^6.0.14
+    version: 6.0.14(@codemirror/commands@6.2.4)(@codemirror/language@6.7.0)(@codemirror/search@6.4.0)(@codemirror/state@6.2.1)(@codemirror/view@6.12.0)
   '@rollup/browser':
     specifier: ^3.22.0
     version: 3.22.0
@@ -892,6 +898,22 @@ packages:
   /@polka/url@1.0.0-next.21:
     resolution: {integrity: sha512-a5Sab1C4/icpTZVzZc5Ghpz88yQtGOyNqYXcZgOssB2uuAr+wF/MvN6bgtW32q7HHrvBki+BsZ0OuNv6EV3K9g==}
     dev: true
+
+  /@replit/codemirror-vim@6.0.14(@codemirror/commands@6.2.4)(@codemirror/language@6.7.0)(@codemirror/search@6.4.0)(@codemirror/state@6.2.1)(@codemirror/view@6.12.0):
+    resolution: {integrity: sha512-wwhqhvL76FdRTdwfUWpKCbv0hkp2fvivfMosDVlL/popqOiNLtUhL02ThgHZH8mus/NkVr5Mj582lyFZqQrjOA==}
+    peerDependencies:
+      '@codemirror/commands': ^6.0.0
+      '@codemirror/language': ^6.1.0
+      '@codemirror/search': ^6.2.0
+      '@codemirror/state': ^6.0.1
+      '@codemirror/view': ^6.0.3
+    dependencies:
+      '@codemirror/commands': 6.2.4
+      '@codemirror/language': 6.7.0
+      '@codemirror/search': 6.4.0
+      '@codemirror/state': 6.2.1
+      '@codemirror/view': 6.12.0
+    dev: false
 
   /@rollup/browser@3.22.0:
     resolution: {integrity: sha512-D+pW23VF6XirO/NHzVbc+MjGi8+zDqyno60X7Hhna9P55ZDuiN9mWWmYVBOcg2nVajQM9eqK3XTCi5Qw+vjuWg==}

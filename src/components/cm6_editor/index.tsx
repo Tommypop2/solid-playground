@@ -14,14 +14,7 @@ import {
   Tooltip,
 } from '@codemirror/view';
 import { EditorState } from '@codemirror/state';
-import {
-  foldGutter,
-  indentOnInput,
-  syntaxHighlighting,
-  defaultHighlightStyle,
-  bracketMatching,
-  foldKeymap,
-} from '@codemirror/language';
+import { foldGutter, indentOnInput, syntaxHighlighting, bracketMatching, foldKeymap } from '@codemirror/language';
 import { history, defaultKeymap, historyKeymap, indentWithTab } from '@codemirror/commands';
 import { highlightSelectionMatches, searchKeymap } from '@codemirror/search';
 import {
@@ -30,7 +23,6 @@ import {
   closeBracketsKeymap,
   completionKeymap,
   CompletionResult,
-  CompletionContext,
   completeFromList,
 } from '@codemirror/autocomplete';
 import { Diagnostic, lintKeymap, setDiagnostics } from '@codemirror/lint';
@@ -39,10 +31,11 @@ import { javascript } from '@codemirror/lang-javascript';
 import { throttle } from '@solid-primitives/scheduled';
 import { LinterWorkerPayload, LinterWorkerResponse } from '../../workers/linter';
 import { useAppContext } from '../../../playground/context';
-import { color, oneDark, oneDarkHighlightStyle, oneDarkTheme } from '@codemirror/theme-one-dark';
+// import { color, oneDark, oneDarkHighlightStyle, oneDarkTheme } from '@codemirror/theme-one-dark';
 import type { FormatterPayload } from '../../workers/formatter';
 import { init } from './setupSolid';
 import { displayPartsToString } from 'typescript';
+import { vsCodeDarkPlusTheme, vsCodeDarkPlusHighlightStyle } from './themes/vs-code-dark-plus';
 const EditorTheme = EditorView.theme({
   '&': {
     fontSize: '15px',
@@ -171,7 +164,7 @@ const CM6Editor: Component<{
           dropCursor(),
           EditorState.allowMultipleSelections.of(true),
           indentOnInput(),
-          syntaxHighlighting(oneDarkHighlightStyle, { fallback: true }),
+          syntaxHighlighting(vsCodeDarkPlusHighlightStyle, { fallback: true }),
           bracketMatching(),
           closeBrackets(),
           autocompletion(),
@@ -254,12 +247,19 @@ const CM6Editor: Component<{
           }),
           EditorView.updateListener.of((v: ViewUpdate) => {
             if (!v.docChanged) return;
+            const userTransaction = v.transactions.find(
+              (transaction) => transaction.isUserEvent('input') || transaction.isUserEvent('delete'),
+            );
+            if (!userTransaction) return;
             const code = v.state.doc.toString();
+            const tab = appCtx?.tabs()?.find((tab) => tab.name === currentFileName());
+            tab!.source = code;
             runLinter(code);
             props.onDocChange?.(code);
           }),
           EditorTheme,
-          oneDarkTheme,
+          // oneDarkTheme,
+          vsCodeDarkPlusTheme,
         ],
       });
 

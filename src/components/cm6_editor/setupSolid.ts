@@ -32,23 +32,15 @@ import sLibDecorators from '/node_modules/typescript/lib/lib.decorators.d.ts?raw
 import sLibDOM from '/node_modules/typescript/lib/lib.dom.d.ts?raw';
 import sLibWebWorkerImportScripts from '/node_modules/typescript/lib/lib.webworker.importscripts.d.ts?raw';
 import sLibScriptHost from '/node_modules/typescript/lib/lib.scripthost.d.ts?raw';
+
 export const init = (tabs: Tab[]) => {
   let fsMap = new Map<string, string>();
-  // createEffect(
-  //   on(appCtx!.tabs, (tabs) => {
-  //     tabs?.forEach((tab) => {
-  //       fsMap.set(tab.name, tab.source);
-  //     });
-  //   }),
-  // );
   tabs?.forEach((tab) => {
     fsMap.set(tab.name, tab.source);
   });
   const system = createSystem(fsMap);
   function csm(source: string, path: string) {
     system.writeFile(`node_modules/solid-js/${path}`, source);
-    // languages.typescript.typescriptDefaults.addExtraLib(source, `file:///node_modules/solid-js/${path}`);
-    // languages.typescript.javascriptDefaults.addExtraLib(source, `file:///node_modules/solid-js/${path}`);
   }
   function cm(source: string, path: string) {
     system.writeFile(path, source);
