@@ -123,6 +123,12 @@ const CM6Editor: Component<{
       },
     ),
   );
+  // Below is super crude and quite slow. In the future, tabs should be diffed so that only updated tabs are updated in the typescript fs
+  createEffect(
+    on(appCtx!.tabs, (tabs) => {
+      tabs?.forEach((tab) => env.createFile(tab.name, tab.source));
+    }),
+  );
   const listener = ({ data }: MessageEvent<LinterWorkerResponse>) => {
     if (props.displayErrors) {
       const { event } = data;
@@ -209,7 +215,7 @@ const CM6Editor: Component<{
               async (ctx): Promise<CompletionResult | null> => {
                 const { pos } = ctx;
                 try {
-                  const completions = env.languageService.getCompletionsAtPosition('main.tsx', pos, {});
+                  const completions = env.languageService.getCompletionsAtPosition(currentFileName()!, pos, {});
                   if (!completions) {
                     console.log('Unable to get completions', { pos });
                     return null;
@@ -233,7 +239,7 @@ const CM6Editor: Component<{
             const tooltip: Tooltip = {
               pos,
               create(_) {
-                const quickInfo = env.languageService.getQuickInfoAtPosition('main.tsx', pos);
+                const quickInfo = env.languageService.getQuickInfoAtPosition(currentFileName()!, pos);
                 const dom = document.createElement('div');
                 dom.setAttribute('class', 'cm-quickinfo-tooltip');
                 dom.textContent = quickInfo
