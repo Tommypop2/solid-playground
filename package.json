@@ -42,7 +42,6 @@
     "fs-extra": "^11.1.1",
     "jiti": "^1.18.2",
     "mime": "^3.0.0",
-    "monaco-editor": "~0.38.0",
     "register-service-worker": "^1.7.2",
     "rollup-plugin-delete": "^2.0.0",
     "rollup-plugin-import-css": "^3.2.1",
@@ -77,8 +76,6 @@
     "dedent": "^0.7.0",
     "eslint-solid-standalone": "^0.12.1",
     "jszip": "^3.10.1",
-    "monaco-editor-textmate": "^4.0.0",
-    "monaco-textmate": "^3.0.1",
     "onigasm": "^2.2.5",
     "prettier": "^2.8.8",
     "prettier-plugin-tailwindcss": "^0.2.8",
@@ -88,8 +85,5 @@
     "solid-js": "1.7.5"
   },
   "pnpm": {
-    "patchedDependencies": {
-      "monaco-editor@0.38.0": "patches/monaco-editor@0.37.1.patch"
-    }
   }
 }

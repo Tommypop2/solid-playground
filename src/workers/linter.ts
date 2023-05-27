@@ -1,7 +1,36 @@
 import { verify, verifyAndFix } from 'eslint-solid-standalone';
 import type { Linter } from 'eslint-solid-standalone';
-import type { editor } from 'monaco-editor';
-
+export enum MarkerTag {
+  Unnecessary = 1,
+  Deprecated = 2,
+}
+interface IRelatedInformation {
+  endColumn: number;
+  endLineNumber: number;
+  message: string;
+  // resource: Uri;
+  startColumn: number;
+  startLineNumber: number;
+}
+export enum MarkerSeverity {
+  Hint = 1,
+  Info = 2,
+  Warning = 4,
+  Error = 8,
+}
+export interface IMarkerData {
+  code?: string;
+  severity: MarkerSeverity;
+  message: string;
+  source?: string;
+  startLineNumber: number;
+  startColumn: number;
+  endLineNumber: number;
+  endColumn: number;
+  modelVersionId?: number;
+  relatedInformation?: IRelatedInformation[];
+  tags?: MarkerTag[];
+}
 type RuleSeverityOverrides = Parameters<typeof verify>[1];
 export interface LinterWorkerPayload {
   event: 'LINT' | 'FIX';
@@ -9,7 +38,7 @@ export interface LinterWorkerPayload {
   ruleSeverityOverrides?: RuleSeverityOverrides;
 }
 
-const messagesToMarkers = (messages: Array<Linter.LintMessage>): Array<editor.IMarkerData> => {
+const messagesToMarkers = (messages: Array<Linter.LintMessage>): Array<IMarkerData> => {
   if (messages.some((m) => m.fatal)) return []; // no need for any extra highlights on parse errors
   return messages.map((m) => ({
     startLineNumber: m.line,
