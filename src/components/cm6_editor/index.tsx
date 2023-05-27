@@ -38,15 +38,17 @@ import { throttle } from '@solid-primitives/scheduled';
 import { LinterWorkerPayload, LinterWorkerResponse } from '../../workers/linter';
 import { useAppContext } from '../../../playground/context';
 import { color, oneDark, oneDarkHighlightStyle, oneDarkTheme } from '@codemirror/theme-one-dark';
-import { createSystem } from '@typescript/vfs';
 import type { FormatterPayload } from '../../workers/formatter';
+import { init } from './setupSolid';
+import { displayPartsToString } from 'typescript';
 const EditorTheme = EditorView.theme({
   '&': {
     fontSize: '15px',
     height: '100%',
+    backgroundColor: '#1e1e1e',
   },
   '.cm-scroller': {
-    fontFamily: 'inherit',
+    fontFamily: 'Consolas, "Courier New", monospace',
   },
 });
 const CM6Editor: Component<{
@@ -67,14 +69,7 @@ const CM6Editor: Component<{
     const contents = appCtx?.tabs()?.find((tab) => tab.name === fileName)?.source;
     return contents;
   };
-  let fsMap = new Map<string, string>();
-  createEffect(
-    on(appCtx!.tabs, (tabs) => {
-      tabs?.forEach((tab) => {
-        fsMap.set(tab.name, tab.source);
-      });
-    }),
-  );
+  const env = init(appCtx?.tabs()!);
   const [editorRef, setEditorRef] = createSignal<HTMLDivElement>();
   let CMView: EditorView | undefined;
   const runLinter = throttle((code: string) => {
@@ -189,6 +184,8 @@ const CM6Editor: Component<{
               key: 'Ctrl-s',
               run: (v) => {
                 const code = v.state.doc.toString();
+                const tab = appCtx?.tabs()?.find((tab) => tab.name === currentFileName());
+                tab!.source = code;
                 props.onDocChange?.(code);
                 return true;
               },
@@ -207,9 +204,11 @@ const CM6Editor: Component<{
             const tooltip: Tooltip = {
               pos,
               create(_) {
+                const toolTip = env.languageService.getQuickInfoAtPosition('main.tsx', pos);
                 const dom = document.createElement('div');
                 dom.setAttribute('class', 'cm-quickinfo-tooltip');
-                dom.textContent = '123';
+                dom.textContent = displayPartsToString(toolTip?.displayParts);
+                // dom.textContent = '123';
                 return { dom };
               },
             };
@@ -221,8 +220,8 @@ const CM6Editor: Component<{
             runLinter(code);
             props.onDocChange?.(code);
           }),
-          oneDarkTheme,
           EditorTheme,
+          oneDarkTheme,
         ],
       });
 
