@@ -1,11 +1,11 @@
-import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
-import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker';
-import cssWorker from 'monaco-editor/esm/vs/language/css/css.worker?worker';
-import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker';
+// import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
+// import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker';
+// import cssWorker from 'monaco-editor/esm/vs/language/css/css.worker?worker';
+// import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker';
 import CompilerWorker from '../../src/workers/compiler?worker';
 import FormatterWorker from '../../src/workers/formatter?worker';
 import LinterWorker from '../../src/workers/linter?worker';
-import onigasm from 'onigasm/lib/onigasm.wasm?url';
+// import onigasm from 'onigasm/lib/onigasm.wasm?url';
 import { batch, createResource, createSignal, lazy, onCleanup, Show, Suspense } from 'solid-js';
 import { useMatch, useNavigate, useParams } from '@solidjs/router';
 import { API, useAppContext } from '../context';
@@ -17,22 +17,22 @@ import { Header } from '../components/header';
 
 const Repl = lazy(() => import('../../src/components/repl'));
 
-window.MonacoEnvironment = {
-  getWorker(_moduleId: unknown, label: string) {
-    switch (label) {
-      case 'css':
-        return new cssWorker();
-      case 'json':
-        return new jsonWorker();
-      case 'typescript':
-      case 'javascript':
-        return new tsWorker();
-      default:
-        return new editorWorker();
-    }
-  },
-  onigasm,
-};
+// window.MonacoEnvironment = {
+//   getWorker(_moduleId: unknown, label: string) {
+//     switch (label) {
+//       case 'css':
+//         return new cssWorker();
+//       case 'json':
+//         return new jsonWorker();
+//       case 'typescript':
+//       case 'javascript':
+//         return new tsWorker();
+//       default:
+//         return new editorWorker();
+//     }
+//   },
+//   onigasm,
+// };
 
 interface InternalTab extends Tab {
   _source: string;

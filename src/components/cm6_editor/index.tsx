@@ -10,6 +10,8 @@ import {
   highlightActiveLine,
   keymap,
   ViewUpdate,
+  hoverTooltip,
+  Tooltip,
 } from '@codemirror/view';
 import { EditorState } from '@codemirror/state';
 import {
@@ -20,16 +22,33 @@ import {
   bracketMatching,
   foldKeymap,
 } from '@codemirror/language';
-import { history, defaultKeymap, historyKeymap } from '@codemirror/commands';
+import { history, defaultKeymap, historyKeymap, indentWithTab } from '@codemirror/commands';
 import { highlightSelectionMatches, searchKeymap } from '@codemirror/search';
-import { closeBrackets, autocompletion, closeBracketsKeymap, completionKeymap } from '@codemirror/autocomplete';
-import { Diagnostic, lintKeymap, linter, setDiagnostics } from '@codemirror/lint';
+import {
+  closeBrackets,
+  autocompletion,
+  closeBracketsKeymap,
+  completionKeymap,
+  CompletionResult,
+} from '@codemirror/autocomplete';
+import { Diagnostic, lintKeymap, setDiagnostics } from '@codemirror/lint';
 import { EditorView } from '@codemirror/view';
 import { javascript } from '@codemirror/lang-javascript';
 import { throttle } from '@solid-primitives/scheduled';
 import { LinterWorkerPayload, LinterWorkerResponse } from '../../workers/linter';
 import { useAppContext } from '../../../playground/context';
-
+import { color, oneDark, oneDarkHighlightStyle, oneDarkTheme } from '@codemirror/theme-one-dark';
+import { createSystem } from '@typescript/vfs';
+import type { FormatterPayload } from '../../workers/formatter';
+const EditorTheme = EditorView.theme({
+  '&': {
+    fontSize: '15px',
+    height: '100%',
+  },
+  '.cm-scroller': {
+    fontFamily: 'inherit',
+  },
+});
 const CM6Editor: Component<{
   url: string;
   disabled?: true;
@@ -42,11 +61,20 @@ const CM6Editor: Component<{
   onEditorReady?: any;
 }> = (props) => {
   const appCtx = useAppContext();
-  const getContents = (url: string) => {
-    const fileName = url.split('/').at(-1);
+  const currentFileName = () => props.url.split('/').at(-1);
+  const getContents = () => {
+    const fileName = currentFileName();
     const contents = appCtx?.tabs()?.find((tab) => tab.name === fileName)?.source;
     return contents;
   };
+  let fsMap = new Map<string, string>();
+  createEffect(
+    on(appCtx!.tabs, (tabs) => {
+      tabs?.forEach((tab) => {
+        fsMap.set(tab.name, tab.source);
+      });
+    }),
+  );
   const [editorRef, setEditorRef] = createSignal<HTMLDivElement>();
   let CMView: EditorView | undefined;
   const runLinter = throttle((code: string) => {
@@ -58,12 +86,41 @@ const CM6Editor: Component<{
       props.linter.postMessage(payload);
     }
   }, 250);
+  const runFormatter = async (value: string, position: number) => {
+    if (!CMView) return;
+    const payload: FormatterPayload = {
+      event: 'FORMAT_CURSOR',
+      code: value,
+      cursorOffset: position,
+    };
+    props.formatter!.postMessage(payload);
+
+    const data: { text: string; cursorOffset: number }[] = await new Promise((resolve) => {
+      props.formatter!.addEventListener(
+        'message',
+        ({ data: { transformed } }) => {
+          resolve([
+            {
+              text: transformed.formatted,
+              cursorOffset: transformed.cursorOffset,
+            },
+          ]);
+        },
+        { once: true },
+      );
+    });
+    const newCode = data[0].text;
+    const newOffset = data[0].cursorOffset;
+    const codeUpdate = CMView.state.update({ changes: { from: 0, to: CMView.state.doc.length, insert: newCode } });
+
+    CMView.dispatch(codeUpdate, { selection: { anchor: newOffset } });
+  };
   createEffect(
     on(
       () => props.url,
-      (url) => {
+      () => {
         if (!CMView) return;
-        const contents = getContents(url);
+        const contents = getContents();
         const update = CMView.state.update({ changes: { from: 0, to: CMView.state.doc.length, insert: contents } });
         CMView.update([update]);
       },
@@ -100,7 +157,7 @@ const CM6Editor: Component<{
   createEffect(
     on(editorRef, () => {
       let startState = EditorState.create({
-        doc: getContents(props.url),
+        doc: getContents(),
         extensions: [
           lineNumbers(),
           highlightActiveLineGutter(),
@@ -111,7 +168,7 @@ const CM6Editor: Component<{
           dropCursor(),
           EditorState.allowMultipleSelections.of(true),
           indentOnInput(),
-          syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+          syntaxHighlighting(oneDarkHighlightStyle, { fallback: true }),
           bracketMatching(),
           closeBrackets(),
           autocompletion(),
@@ -127,14 +184,45 @@ const CM6Editor: Component<{
             ...foldKeymap,
             ...completionKeymap,
             ...lintKeymap,
+            indentWithTab,
+            {
+              key: 'Ctrl-s',
+              run: (v) => {
+                const code = v.state.doc.toString();
+                props.onDocChange?.(code);
+                return true;
+              },
+            },
+            {
+              key: 'Alt-F',
+              run: (v) => {
+                console.log('Formatting');
+                runFormatter(v.state.doc.toString(), v.state.selection.asSingle().mainIndex);
+                return true;
+              },
+            },
           ]),
           javascript({ jsx: true, typescript: true }),
+          hoverTooltip((view, pos, side) => {
+            const tooltip: Tooltip = {
+              pos,
+              create(_) {
+                const dom = document.createElement('div');
+                dom.setAttribute('class', 'cm-quickinfo-tooltip');
+                dom.textContent = '123';
+                return { dom };
+              },
+            };
+            return tooltip;
+          }),
           EditorView.updateListener.of((v: ViewUpdate) => {
             if (!v.docChanged) return;
             const code = v.state.doc.toString();
             runLinter(code);
             props.onDocChange?.(code);
           }),
+          oneDarkTheme,
+          EditorTheme,
         ],
       });
 

@@ -8,9 +8,9 @@ import { GridResizer } from './gridResizer';
 import { Error } from './error';
 import { throttle } from '@solid-primitives/scheduled';
 import { createMediaQuery } from '@solid-primitives/media';
-import { editor, Uri } from 'monaco-editor';
+// import { editor, Uri } from 'monaco-editor';
 
-import MonacoTabs from './monaco_editor/monacoTabs';
+// import MonacoTabs from './monaco_editor/monacoTabs';
 // import MonacoEditor from './monaco_editor';
 import MonacoEditor from "./cm6_editor";
 import type { Repl as ReplProps } from 'solid-repl/lib/repl';
@@ -97,12 +97,12 @@ const Repl: ReplProps = (props) => {
     equals: (a, b) => JSON.stringify(a) === JSON.stringify(b),
   });
 
-  let outputModel: editor.ITextModel;
-  createEffect(() => {
-    const outputUri = Uri.parse(`file:///${props.id}/output_dont_import.${tabExtension}`);
-    outputModel = editor.createModel('', 'typescript', outputUri);
-    onCleanup(() => outputModel.dispose());
-  });
+  // let outputModel: editor.ITextModel;
+  // createEffect(() => {
+  //   const outputUri = Uri.parse(`file:///${props.id}/output_dont_import.${tabExtension}`);
+  //   outputModel = editor.createModel('', 'typescript', outputUri);
+  //   onCleanup(() => outputModel.dispose());
+  // });
 
   const onCompilerMessage = ({ data }: any) => {
     const { event, compiled, error } = data;
@@ -112,7 +112,7 @@ const Repl: ReplProps = (props) => {
     } else setError('');
 
     if (event === 'BABEL') {
-      outputModel.setValue(compiled);
+      // outputModel.setValue(compiled);
       setOutput('');
     }
 
@@ -144,8 +144,8 @@ const Repl: ReplProps = (props) => {
         setImportMap(currentMap);
       });
 
-      const importModel = Uri.parse(`file:///${props.id}/import_map.json`);
-      editor.getModel(importModel)!.setValue(tab.source);
+      // const importModel = Uri.parse(`file:///${props.id}/import_map.json`);
+      // editor.getModel(importModel)!.setValue(tab.source);
     }
   };
   compiler.addEventListener('message', onCompilerMessage);
@@ -315,7 +315,7 @@ const Repl: ReplProps = (props) => {
           </TabItem>
         </TabList>
 
-        <MonacoTabs tabs={props.tabs} folder={props.id} />
+        {/* <MonacoTabs tabs={props.tabs} folder={props.id} /> */}
 
         <Show when={props.current}>
           <MonacoEditor
