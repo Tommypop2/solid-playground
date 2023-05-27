@@ -10,8 +10,9 @@ import { throttle } from '@solid-primitives/scheduled';
 import { createMediaQuery } from '@solid-primitives/media';
 import { editor, Uri } from 'monaco-editor';
 
-import MonacoTabs from './editor/monacoTabs';
-import Editor from './editor';
+import MonacoTabs from './monaco_editor/monacoTabs';
+// import MonacoEditor from './monaco_editor';
+import MonacoEditor from "./cm6_editor";
 import type { Repl as ReplProps } from 'solid-repl/lib/repl';
 
 const compileMode = {
@@ -317,7 +318,7 @@ const Repl: ReplProps = (props) => {
         <MonacoTabs tabs={props.tabs} folder={props.id} />
 
         <Show when={props.current}>
-          <Editor
+          <MonacoEditor
             url={`file:///${props.id}/${props.current}`}
             onDocChange={(code: string) => {
               if (props.current == 'import_map.json') {
@@ -400,7 +401,7 @@ const Repl: ReplProps = (props) => {
           </Match>
           <Match when={outputTab() == 1}>
             <section class="relative flex min-h-0 min-w-0 flex-1 flex-col divide-y-2 divide-slate-200 dark:divide-neutral-800">
-              <Editor
+              <MonacoEditor
                 url={`file:///${props.id}/output_dont_import.${tabExtension}`}
                 isDark={props.dark}
                 disabled

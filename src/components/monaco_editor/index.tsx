@@ -5,7 +5,7 @@ import { useZoom } from '../../hooks/useZoom';
 import type { LinterWorkerPayload, LinterWorkerResponse } from '../../workers/linter';
 import { throttle } from '@solid-primitives/scheduled';
 
-const Editor: Component<{
+const MonacoEditor: Component<{
   url: string;
   disabled?: true;
   isDark?: boolean;
@@ -178,4 +178,4 @@ const Editor: Component<{
   return <div class="min-h-0 min-w-0 flex-1 p-0" ref={parent} />;
 };
 
-export default Editor;
+export default MonacoEditor;
