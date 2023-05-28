@@ -1,4 +1,4 @@
-import { Component, createEffect, createSignal, on } from 'solid-js';
+import { Accessor, Component, createEffect, createSignal, on, untrack } from 'solid-js';
 import {
   lineNumbers,
   highlightActiveLineGutter,
@@ -30,12 +30,12 @@ import { EditorView } from '@codemirror/view';
 import { javascript } from '@codemirror/lang-javascript';
 import { throttle } from '@solid-primitives/scheduled';
 import { LinterWorkerPayload, LinterWorkerResponse } from '../../workers/linter';
-import { useAppContext } from '../../../playground/context';
 // import { color, oneDark, oneDarkHighlightStyle, oneDarkTheme } from '@codemirror/theme-one-dark';
 import type { FormatterPayload } from '../../workers/formatter';
 import { init } from './setupSolid';
 import { displayPartsToString } from 'typescript';
 import { vsCodeDarkPlusTheme, vsCodeDarkPlusHighlightStyle } from './themes/vs-code-dark-plus';
+import { Tab } from 'solid-repl';
 const EditorTheme = EditorView.theme({
   '&': {
     fontSize: '15px',
@@ -47,7 +47,7 @@ const EditorTheme = EditorView.theme({
   },
 });
 const CM6Editor: Component<{
-  url: string;
+  currentTab: string;
   disabled?: true;
   isDark?: boolean;
   withMinimap?: boolean;
@@ -56,15 +56,15 @@ const CM6Editor: Component<{
   displayErrors?: boolean;
   onDocChange?: (code: string) => void;
   onEditorReady?: any;
+  tabs: Accessor<Tab[]>;
 }> = (props) => {
-  const appCtx = useAppContext();
-  const currentFileName = () => props.url.split('/').at(-1);
+  const currentFileName = () => props.currentTab;
   const getContents = () => {
     const fileName = currentFileName();
-    const contents = appCtx?.tabs()?.find((tab) => tab.name === fileName)?.source;
+    const contents = props.tabs().find((tab) => tab.name === fileName)?.source;
     return contents;
   };
-  const env = init(appCtx?.tabs()!);
+  const env = init(props.tabs(), props.disabled ? 'output_dont_import.ts' : 'main.tsx');
   const [editorRef, setEditorRef] = createSignal<HTMLDivElement>();
   let CMView: EditorView | undefined;
   const runLinter = throttle((code: string) => {
@@ -76,6 +76,18 @@ const CM6Editor: Component<{
       props.linter.postMessage(payload);
     }
   }, 250);
+  createEffect(() => {
+    if (
+      untrack(() => props.currentTab) === 'output_dont_import.ts' &&
+      props.tabs()[0].name === 'output_dont_import.ts'
+    ) {
+      if (!CMView) return;
+      const update = CMView.state.update({
+        changes: { from: 0, to: CMView.state.doc.length, insert: props.tabs()[0].source },
+      });
+      CMView.dispatch(update);
+    }
+  });
   const runFormatter = async (value: string, position: number) => {
     if (!CMView) return;
     const payload: FormatterPayload = {
@@ -84,7 +96,6 @@ const CM6Editor: Component<{
       cursorOffset: position,
     };
     props.formatter!.postMessage(payload);
-
     const data: { text: string; cursorOffset: number }[] = await new Promise((resolve) => {
       props.formatter!.addEventListener(
         'message',
@@ -106,19 +117,16 @@ const CM6Editor: Component<{
     CMView.dispatch(codeUpdate, { selection: { anchor: newOffset } });
   };
   createEffect(
-    on(
-      () => props.url,
-      () => {
-        if (!CMView) return;
-        const contents = getContents();
-        const update = CMView.state.update({ changes: { from: 0, to: CMView.state.doc.length, insert: contents } });
-        CMView.update([update]);
-      },
-    ),
+    on(currentFileName, () => {
+      if (!CMView) return;
+      const contents = getContents();
+      const update = CMView.state.update({ changes: { from: 0, to: CMView.state.doc.length, insert: contents } });
+      CMView.update([update]);
+    }),
   );
   // Below is super crude and quite slow. In the future, tabs should be diffed so that only updated tabs are updated in the typescript fs
   createEffect(
-    on(appCtx!.tabs, (tabs) => {
+    on(props.tabs, (tabs) => {
       tabs?.forEach((tab) => env.createFile(tab.name, tab.source));
     }),
   );
@@ -185,7 +193,7 @@ const CM6Editor: Component<{
               key: 'Ctrl-s',
               run: (v) => {
                 const code = v.state.doc.toString();
-                const tab = appCtx?.tabs()?.find((tab) => tab.name === currentFileName());
+                const tab = props.tabs().find((tab) => tab.name === currentFileName());
                 tab!.source = code;
                 props.onDocChange?.(code);
                 return true;
@@ -252,7 +260,7 @@ const CM6Editor: Component<{
             );
             if (!userTransaction) return;
             const code = v.state.doc.toString();
-            const tab = appCtx?.tabs()?.find((tab) => tab.name === currentFileName());
+            const tab = props.tabs().find((tab) => tab.name === currentFileName());
             tab!.source = code;
             runLinter(code);
             props.onDocChange?.(code);
@@ -260,6 +268,7 @@ const CM6Editor: Component<{
           EditorTheme,
           // oneDarkTheme,
           vsCodeDarkPlusTheme,
+          EditorState.readOnly.of(props.disabled ?? false),
         ],
       });
 

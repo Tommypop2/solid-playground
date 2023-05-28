@@ -27,8 +27,9 @@ import sServer from '/node_modules/solid-js/store/types/server.d.ts?raw';
 import sStore from '/node_modules/solid-js/store/types/store.d.ts?raw';
 import { libFileMap } from './lib';
 
-export const init = (tabs: Tab[]) => {
-  let fsMap = libFileMap;
+export const init = (tabs: Tab[], fileName: string) => {
+  console.log(tabs, fileName);
+  let fsMap = structuredClone(libFileMap);
   Object.keys(fsMap).forEach((key) => {
     const value = fsMap[key];
     delete fsMap[key];
@@ -37,7 +38,7 @@ export const init = (tabs: Tab[]) => {
   tabs?.forEach((tab) => {
     fsMap[tab.name] = tab.source;
   });
-  const system = createSystem(new Map(Object.entries(libFileMap)));
+  const system = createSystem(new Map(Object.entries(fsMap)));
   function csm(source: string, path: string) {
     system.writeFile(`node_modules/solid-js/${path}`, source);
   }
@@ -68,6 +69,6 @@ export const init = (tabs: Tab[]) => {
   csm(sMutable, 'store/types/mutable.d.ts');
   csm(sServer, 'store/types/server.d.ts');
   csm(sStore, 'store/types/store.d.ts');
-  const env = createVirtualTypeScriptEnvironment(system, ['main.tsx'], ts);
+  const env = createVirtualTypeScriptEnvironment(system, [fileName], ts);
   return env;
 };

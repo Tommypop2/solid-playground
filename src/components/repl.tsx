@@ -12,8 +12,9 @@ import { createMediaQuery } from '@solid-primitives/media';
 
 // import MonacoTabs from './monaco_editor/monacoTabs';
 // import MonacoEditor from './monaco_editor';
-import MonacoEditor from "./cm6_editor";
+import MonacoEditor from './cm6_editor';
 import type { Repl as ReplProps } from 'solid-repl/lib/repl';
+import { Tab } from 'solid-repl';
 
 const compileMode = {
   SSR: { generate: 'ssr', hydratable: true },
@@ -103,7 +104,9 @@ const Repl: ReplProps = (props) => {
   //   outputModel = editor.createModel('', 'typescript', outputUri);
   //   onCleanup(() => outputModel.dispose());
   // });
-
+  const [outputTabTabs, setOutputTabTabs] = createSignal<Tab[]>([{ name: 'output_dont_import.ts', source: ' ' }], {
+    equals: false,
+  });
   const onCompilerMessage = ({ data }: any) => {
     const { event, compiled, error } = data;
     if (event === 'ERROR') {
@@ -113,6 +116,7 @@ const Repl: ReplProps = (props) => {
 
     if (event === 'BABEL') {
       // outputModel.setValue(compiled);
+      setOutputTabTabs([{ name: 'output_dont_import.ts', source: compiled }]);
       setOutput('');
     }
 
@@ -319,7 +323,7 @@ const Repl: ReplProps = (props) => {
 
         <Show when={props.current}>
           <MonacoEditor
-            url={`file:///${props.id}/${props.current}`}
+            currentTab={props.current ?? ''}
             onDocChange={(code: string) => {
               if (props.current == 'import_map.json') {
                 const newImportMap = JSON.parse(code);
@@ -334,6 +338,7 @@ const Repl: ReplProps = (props) => {
             withMinimap={false}
             onEditorReady={props.onEditorReady}
             displayErrors={displayErrors()}
+            tabs={() => props.tabs}
           />
         </Show>
 
@@ -402,10 +407,11 @@ const Repl: ReplProps = (props) => {
           <Match when={outputTab() == 1}>
             <section class="relative flex min-h-0 min-w-0 flex-1 flex-col divide-y-2 divide-slate-200 dark:divide-neutral-800">
               <MonacoEditor
-                url={`file:///${props.id}/output_dont_import.${tabExtension}`}
+                currentTab="output_dont_import.ts"
                 isDark={props.dark}
                 disabled
                 withMinimap={false}
+                tabs={outputTabTabs}
               />
 
               <div class="p-5">
