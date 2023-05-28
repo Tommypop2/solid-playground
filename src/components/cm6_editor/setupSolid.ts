@@ -25,26 +25,25 @@ import sStateModifier from '/node_modules/solid-js/store/types/modifiers.d.ts?ra
 import sMutable from '/node_modules/solid-js/store/types/mutable.d.ts?raw';
 import sServer from '/node_modules/solid-js/store/types/server.d.ts?raw';
 import sStore from '/node_modules/solid-js/store/types/store.d.ts?raw';
-// Typescript declarations
-import sLibTs from '/node_modules/typescript/lib/lib.d.ts?raw';
-import sLibES5 from '/node_modules/typescript/lib/lib.es5.d.ts?raw';
-import sLibDecorators from '/node_modules/typescript/lib/lib.decorators.d.ts?raw';
-import sLibDOM from '/node_modules/typescript/lib/lib.dom.d.ts?raw';
-import sLibWebWorkerImportScripts from '/node_modules/typescript/lib/lib.webworker.importscripts.d.ts?raw';
-import sLibScriptHost from '/node_modules/typescript/lib/lib.scripthost.d.ts?raw';
+import { libFileMap } from './lib';
 
 export const init = (tabs: Tab[]) => {
-  let fsMap = new Map<string, string>();
-  tabs?.forEach((tab) => {
-    fsMap.set(tab.name, tab.source);
+  let fsMap = libFileMap;
+  Object.keys(fsMap).forEach((key) => {
+    const value = fsMap[key];
+    delete fsMap[key];
+    fsMap['/' + key] = value;
   });
-  const system = createSystem(fsMap);
+  tabs?.forEach((tab) => {
+    fsMap[tab.name] = tab.source;
+  });
+  const system = createSystem(new Map(Object.entries(libFileMap)));
   function csm(source: string, path: string) {
     system.writeFile(`node_modules/solid-js/${path}`, source);
   }
-  function cm(source: string, path: string) {
-    system.writeFile(path, source);
-  }
+  // function cm(source: string, path: string) {
+  //   system.writeFile(path, source);
+  // }
   csm(sPackageJson, 'package.json');
   csm(sWebPackageJson, 'web/package.json');
   csm(sJsxRuntime, 'jsx-runtime.d.ts');
@@ -69,13 +68,6 @@ export const init = (tabs: Tab[]) => {
   csm(sMutable, 'store/types/mutable.d.ts');
   csm(sServer, 'store/types/server.d.ts');
   csm(sStore, 'store/types/store.d.ts');
-
-  cm(sLibTs, '/lib.d.ts');
-  cm(sLibES5, '/lib.es5.d.ts');
-  cm(sLibDecorators, '/lib.decorators.d.ts');
-  cm(sLibDOM, '/lib.dom.d.ts');
-  cm(sLibWebWorkerImportScripts, '/lib.webworker.importscripts.d.ts');
-  cm(sLibScriptHost, '/lib.scripthost.d.ts');
   const env = createVirtualTypeScriptEnvironment(system, ['main.tsx'], ts);
   return env;
 };
