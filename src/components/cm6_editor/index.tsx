@@ -1,4 +1,4 @@
-import { Accessor, Component, createEffect, createSignal, on, untrack } from 'solid-js';
+import { Accessor, Component, createEffect, createSignal, on, onCleanup, untrack } from 'solid-js';
 import {
   lineNumbers,
   highlightActiveLineGutter,
@@ -266,7 +266,6 @@ const CM6Editor: Component<{
             props.onDocChange?.(code);
           }),
           EditorTheme,
-          // oneDarkTheme,
           vsCodeDarkPlusTheme,
           EditorState.readOnly.of(props.disabled ?? false),
         ],
@@ -278,6 +277,10 @@ const CM6Editor: Component<{
       });
     }),
   );
+  onCleanup(() => {
+    if (!CMView) return;
+    CMView.destroy();
+  });
   return <div ref={setEditorRef} class="h-full"></div>;
 };
 export default CM6Editor;
