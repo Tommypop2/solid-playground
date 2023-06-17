@@ -175,7 +175,6 @@ const CM6Editor: Component<{
           syntaxHighlighting(vsCodeDarkPlusHighlightStyle, { fallback: true }),
           bracketMatching(),
           closeBrackets(),
-          autocompletion(),
           rectangularSelection(),
           crosshairCursor(),
           highlightActiveLine(),
@@ -221,7 +220,6 @@ const CM6Editor: Component<{
                     console.log('Unable to get completions', { pos });
                     return null;
                   }
-
                   return completeFromList(
                     completions.entries.map((c, _) => ({
                       type: c.kind,
